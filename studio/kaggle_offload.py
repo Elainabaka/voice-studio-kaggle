@@ -44,27 +44,44 @@ def install_cli() -> str:
     return "Đã cài Kaggle CLI."
 
 
-def check_setup() -> dict:
-    """Kiểm tra Kaggle CLI + đăng nhập. Trả về dict để hiển thị."""
-    info = {"cli": bool(_kaggle_exe()), "auth": False, "user": "", "msg": ""}
+def check_setup(live: bool = True) -> dict:
+    """Kiểm tra Kaggle CLI + đăng nhập (hỗ trợ OAuth lẫn legacy kaggle.json)."""
+    info = {"cli": bool(_kaggle_exe()), "auth": False, "user": "", "method": "", "live": None, "msg": ""}
     if not info["cli"]:
         info["msg"] = "Chưa cài Kaggle CLI. Chạy `pip install kaggle` hoặc bấm nút 'Cài Kaggle CLI'."
         return info
-    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
-    if kaggle_json.exists() or os.environ.get("KAGGLE_KEY"):
-        info["auth"] = True
-        try:
-            out = _kaggle("config", "view", timeout=30)
-            for ln in out.splitlines():
-                if "username" in ln.lower():
-                    info["user"] = ln.split(":")[-1].strip()
-                    break
-        except Exception:
-            pass
-        info["msg"] = f"Sẵn sàng. Người dùng: {info['user'] or '(không rõ)'}."
+    # credentials có thể ở: credentials.json (OAuth), kaggle.json (legacy), hoặc env
+    home = Path.home() / ".kaggle"
+    has_creds = ((home / "credentials.json").exists() or (home / "kaggle.json").exists()
+                 or bool(os.environ.get("KAGGLE_KEY")) or bool(os.environ.get("KAGGLE_USERNAME")))
+    # hỏi CLI trạng thái đăng nhập thật (username + auth_method)
+    try:
+        out = _kaggle("config", "view", timeout=30)
+        for ln in out.splitlines():
+            low = ln.lower()
+            if "username" in low:
+                info["user"] = ln.split(":", 1)[-1].strip()
+            elif "auth_method" in low:
+                info["method"] = ln.split(":", 1)[-1].strip()
+        if info["user"] or info["method"]:
+            has_creds = True
+    except Exception as e:
+        if not has_creds:
+            info["msg"] = f"Không đọc được cấu hình Kaggle: {e}"
+    info["auth"] = has_creds
+    if has_creds:
+        info["msg"] = f"✅ Đã đăng nhập: {info['user'] or '(không rõ)'} · {info['method'] or 'n/a'}."
+        if live:
+            try:
+                _kaggle("kernels", "list", "--page-size", "1", timeout=30)
+                info["live"] = True
+                info["msg"] += " · Kết nối API OK."
+            except Exception:
+                info["live"] = False
+                info["msg"] += " · Chưa xác minh API (offline hoặc token hết hạn?)."
     else:
-        info["msg"] = ("Chưa đăng nhập Kaggle. Chạy `kaggle auth login` (mở trình duyệt) "
-                       "hoặc đặt ~/.kaggle/kaggle.json.")
+        info["msg"] = ("❌ Chưa đăng nhập Kaggle. Chạy `kaggle auth login` (mở trình duyệt) "
+                       "hoặc đặt ~/.kaggle/credentials.json.")
     return info
 
 
