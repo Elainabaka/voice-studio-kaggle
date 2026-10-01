@@ -21,3 +21,15 @@ output/
 # OS
 .DS_Store
 Thumbs.db
+
+# Credential / bi mat — KHONG BAO GIO commit (an toan khi public)
+kaggle.json
+credentials.json
+.kaggle/
+.env
+.env.*
+.auth/
+*.token
+*.key
+.netrc
+secrets*
