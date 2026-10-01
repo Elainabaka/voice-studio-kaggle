@@ -1,11 +1,28 @@
 # voice-studio-kaggle
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)
+![GPU](https://img.shields.io/badge/GPU-T4%20free%20via%20Kaggle-orange.svg)
+![TTS](https://img.shields.io/badge/TTS-Vietnamese%20%C2%B7%20Cloning%20%C2%B7%20Design-red.svg)
+
 **Voice Studio AI** — notebook Kaggle (GPU) biến GPU miễn phí thành một **studio tạo giọng nói**:
 thiết kế giọng từ mô tả, nhân bản giọng từ clip, kho giọng tái sử dụng, dựng podcast/audiobook
 nhiều giọng, xuất WAV/MP3. Cộng đồng bấm **Copy & Edit → Run All** là chạy.
 
 > **Tác giả / Author: Elainabaka** — Thiết kế & dựng notebook Voice Studio AI cho cộng đồng.
 > © 2026 Elainabaka. Giấy phép MIT (xem mục Credit).
+
+---
+
+## ⚡ Bắt đầu nhanh
+
+| Bạn muốn | Làm ngay |
+|---|---|
+| 🖥️ **Dùng trên máy mình** (khuyến nghị — nhanh, lưu giọng lâu) | Clone → double-click **`run.bat`** (Windows) / `./run.sh` (Mac/Linux) → mở `http://127.0.0.1:7860` |
+| 🌐 **Không cần cài gì, có mạng** | Kaggle → Import [`notebook/Voice_Studio_AI_Kaggle_GPU.ipynb`](notebook/Voice_Studio_AI_Kaggle_GPU.ipynb) → bật **GPU + Internet** → **Run All** |
+| ☁️ **Máy yếu / render nặng** | Chạy local → tab **☁️ Chạy trên Kaggle** → đóng gói → đẩy lên T4 → chờ → tải WAV về |
+
+> Chi tiết từng bước ở mục **📖 Hướng dẫn sử dụng** ngay bên dưới.
 
 ---
 
@@ -87,22 +104,27 @@ Voice Studio AI (Kaggle GPU · T4 x2)  —  giao diện tự mở · đổi ngô
 
 ```
 voice-studio-kaggle/
-├── README.md · AGENTS.md              tài liệu + quy tắc cho AI
+├── README.md · AGENTS.md · LICENSE      tài liệu + quy tắc cho AI + giấy phép MIT
+├── requirements.txt · run.py/.bat/.sh   cài đặt + chạy local 1 nút
 ├── notebook/
 │   └── Voice_Studio_AI_Kaggle_GPU.ipynb   ★ DELIVERABLE (copy&edit = chạy)
-├── studio/                            source gốc (bảo trì + test ở đây)
-│   ├── config.py    CFG + ENGINE_INFO + ensure_dirs
-│   ├── audio.py     đọc/ghi, resample, mono, trim, chuẩn hóa
-│   ├── voicebank.py VoiceProfile + bank save/load/export/import   ← TRỤ CỘT
-│   ├── render.py    script nhiều giọng → audio (engine-agnostic)
-│   ├── export.py    WAV/MP3/zip
-│   ├── engines.py   BaseEngine + registry + VieNeu + VoxCPM2 (hot-swap)
-│   └── app.py       Gradio Studio 5 tab + điều phối cấp cao
-├── tests/smoke.py   kiểm thử phần lõi (không cần GPU)
+├── studio/                              source gốc (bảo trì + test ở đây)
+│   ├── config.py        CFG + ENGINE_INFO + ensure_dirs
+│   ├── audio.py         đọc/ghi, resample, mono, trim, chuẩn hóa
+│   ├── voicebank.py     VoiceProfile + bank save/load/export/import   ← TRỤ CỘT
+│   ├── render.py        script nhiều giọng → audio (engine-agnostic)
+│   ├── synth.py         synth_text/synth_profile (dùng chung app + kernel)
+│   ├── export.py        WAV/MP3/zip
+│   ├── engines.py       BaseEngine + registry + VieNeu + VoxCPM2 (hot-swap)
+│   ├── kaggle_offload.py  batch offload qua Kaggle CLI (push/status/output)
+│   ├── app.py           Gradio Studio 5 tab + điều phối cấp cao
+│   └── __main__.py      `python -m studio` (chạy local)
+├── tests/smoke.py       kiểm thử phần lõi (không cần GPU)
 └── tools/
-    ├── pack_notebook.py    nhúng studio/ vào .ipynb (base64) — CHẠY LẠI KHI SỬA CODE
-    ├── verify_embed.py     xác minh base64 khớp source
-    └── simulate_notebook.py mô phỏng cell thư viện + chạy smoke test
+    ├── pack_notebook.py     nhúng studio/ vào .ipynb (base64) — CHẠY LẠI KHI SỬA CODE
+    ├── verify_embed.py      xác minh base64 khớp source
+    ├── simulate_notebook.py mô phỏng cell thư viện + chạy smoke test
+    └── test_ui.py           test UI Gradio (VI + EN)
 ```
 
 **Workflow bảo trì:** sửa `studio/*.py` → `python -m tests.smoke` → `python tools/pack_notebook.py`
