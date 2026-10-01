@@ -6,6 +6,7 @@ Kiem tra: audio concat/save, voicebank roundtrip + export/import, render da gion
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import tempfile
@@ -98,6 +99,27 @@ def test_export_zip(tmp):
     print("  [ok] export list + zip")
 
 
+def test_offload_build(tmp):
+    lines = render.parse_script("A: Xin chao\n// bo qua\nB: Moi nguoi")
+    assert lines == [{"voice": "A", "text": "Xin chao", "style": ""},
+                     {"voice": "B", "text": "Moi nguoi", "style": ""}], lines
+    from studio import kaggle_offload as ko
+    job = {"slug": "u/voice-studio-offload", "engine": "vieneu", "task": "script",
+           "script": "A: Xin chao", "gap": 0.25, "out_name": "audio"}
+    kdir = os.path.join(tmp, "kernel")
+    ko.build_kernel(job, None, kdir)
+    with open(os.path.join(kdir, "kernel-metadata.json"), encoding="utf-8") as f:
+        meta = json.load(f)
+    assert meta["id"] == "u/voice-studio-offload" and meta["enable_gpu"]
+    with open(os.path.join(kdir, "voice_studio_offload.ipynb"), encoding="utf-8") as f:
+        nb = json.load(f)
+    assert nb["nbformat"] == 4
+    src = "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
+    for needle in ["studio/synth.py", "synth_profile", "parse_script", "JOB = json.loads"]:
+        assert needle in src, needle
+    print("  [ok] parse_script + kaggle_offload.build_kernel")
+
+
 def main():
     print("Voice Studio smoke test:")
     with tempfile.TemporaryDirectory() as tmp:
@@ -105,6 +127,7 @@ def main():
         test_voicebank_roundtrip(tmp)
         test_render(tmp)
         test_export_zip(tmp)
+        test_offload_build(tmp)
     print("ALL PASS")
 
 

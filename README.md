@@ -11,7 +11,13 @@ nhiều giọng, xuất WAV/MP3. Cộng đồng bấm **Copy & Edit → Run All*
 
 ## 📖 Hướng dẫn sử dụng
 
-### A. Chạy trên Kaggle (không cần cài gì)
+### 🖥️ Cách 1 · Chạy Local (khuyến nghị — nhanh, UI đẹp, hết độ trễ)
+1. Clone repo → mở thư mục → **double-click `run.bat`** (Windows) hoặc `./run.sh` (Mac/Linux).
+2. Lần đầu tự tạo venv + cài thư viện + tải model (một lần). Các lần sau mở là chạy.
+3. Giao diện mở ở `http://127.0.0.1:7860`, tự bật trình duyệt. Giọng lưu **lâu dài** ở `~/.voice_studio`.
+4. Muốn chạy tay: `python run.py` (tự venv + cài) hoặc `python -m studio`.
+
+### 🌐 Cách 2 · Chạy trên Kaggle (không cần cài gì)
 1. Tải `notebook/Voice_Studio_AI_Kaggle_GPU.ipynb` → vào Kaggle → **New Notebook → Import**.
 2. Bật **Settings → Accelerator = GPU (T4 x2)** và **Internet = ON** (bắt buộc để tải model).
 3. Bấm **Run All** → chờ cài thư viện + tải model (lần đầu vài phút).
@@ -31,6 +37,17 @@ nhiều giọng, xuất WAV/MP3. Cộng đồng bấm **Copy & Edit → Run All*
 Kaggle **xóa file khi hết phiên**. Muốn giữ giọng:
 1. Tab 🖼️ **Thư viện giọng** → **Xuất kho giọng → `.zip`** → tải về máy.
 2. Lần chạy sau (Run All) → tab 🖼️ **Thư viện giọng** → **Nhập `.zip` vào kho**.
+
+### 🖥️☁️ Chọn Local hay Kaggle? (tab ☁️ Chạy trên Kaggle)
+| | **Local** | **Kaggle (offload)** |
+|---|---|---|
+| Dùng khi | Máy có GPU/CPU, muốn **tương tác** (gõ → nghe liền) | Máy **không có GPU**, hoặc render **audiobook/kịch bản nặng** |
+| Độ trễ | Rất thấp (chạy tại chỗ) | Cao (batch: đẩy lên → chờ → tải về) |
+| Cách chạy | `run.bat` → gõ chữ nghe liền | Tab ☁️ → đóng gói job → đẩy lên T4 → chờ → tải WAV |
+
+**Offload lên Kaggle** (tab ☁️, chỉ hiện khi chạy local): nhập *kernel slug* + *kịch bản* →
+**Đóng gói & đẩy lên GPU** → **Xem trạng thái** → **Tải kết quả về**. Dùng `kaggle kernels push/status/output`.
+⚠️ Đây là **batch** — không phải GPU từ xa tương tác. Muốn nghe liền thì dùng Local.
 
 ### D. Mẹo chất lượng
 - **Clone:** clip 5–15s, sát mic, phòng yên, **không nhạc**, một người, đọc đúng tông bạn muốn.

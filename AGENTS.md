@@ -1,7 +1,8 @@
 # AGENTS.md — voice-studio-kaggle
 
-Đích: **Voice Studio AI** trên Kaggle GPU — notebook cộng đồng "copy&edit = chạy" để *tạo
-và sở hữu giọng nói* (Design · Clone · Bank · Script · Export), không chỉ đọc văn bản.
+Đích: **Voice Studio AI** — studio tạo & sở hữu giọng nói (Design · Clone · Bank · Script ·
+Export). Chạy **local là chính** (`run.py` / `python -m studio` — nhanh, UI đẹp, giọng lưu lâu);
+có **notebook Kaggle** ("copy&edit = chạy") và **offload Kaggle** (batch, GPU free) làm phương án.
 
 ## Nguyên tắc
 
@@ -47,6 +48,9 @@ Thêm package cài đặt vào cell install trong `pack_notebook.py`.
   đủ 3 loại. Thêm kind = sửa cả `synth_profile` + UI.
 - Đầu ra `tts()` luôn **float32 mono**. `audio.normalize/to_mono` chuẩn hóa trước khi trả.
 - Notebook phải **tự chứa**: không `git clone`, không API key cho luồng cơ bản.
+- **Đa môi trường:** `studio/` import được ở local lẫn trong notebook. `synth.py` (synth dispatch)
+  và `render.parse_script` dùng chung cho app + kernel. `kaggle_offload.py` = **batch offload** qua
+  Kaggle CLI (`kernels push/status/output`) — không kéo gradio vào kernel offload.
 
 ## Ma trận rủi ro
 
@@ -59,6 +63,8 @@ Thêm package cài đặt vào cell install trong `pack_notebook.py`.
 | Import lỗi `studio` khi chạy trên Kaggle | Sai `sys.path` / thiếu cell giải nén | Kiểm tra cell 3 (decode base64 → PKG) |
 | Không có tiếng Việt chuẩn | Đang dùng VoxCPM2/đa ngôn ngữ | Đổi `ENGINE = "vieneu"` |
 | `flash-attn` cài lỗi (VoxCPM2) | Thiếu toolchain CUDA | Bỏ flash-attn (chậm hơn nhưng chạy) |
+| `kaggle` CLI báo chưa cài/đăng nhập | Thiếu `~/.kaggle/kaggle.json` | Bấm "Cài Kaggle CLI" + `kaggle auth login` |
+| Kernel offload lỗi trên Kaggle | Sai engine/thiếu script, hoặc hết hạn mức GPU | `kaggle kernels logs <slug>`, kiểm tra job |
 
 ## Giới hạn đã biết (MVP)
 

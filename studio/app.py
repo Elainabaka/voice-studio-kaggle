@@ -22,6 +22,8 @@ import numpy as np
 from . import audio, export as ex, render
 from .config import CFG, ENGINE_INFO, ensure_dirs
 from .engines import get_engine
+from .synth import synth_text, synth_profile
+from . import kaggle_offload as ko
 from .voicebank import (
     VoiceProfile,
     delete_profile,
@@ -36,33 +38,8 @@ WavOut = Tuple[np.ndarray, int]
 
 
 # ------------------------------------------------------------------ synth --
-def synth_text(text: str, mode: str, desc: str, ref_path: str, ref_text: str,
-               preset: str, style: str) -> WavOut:
-    """Sinh âm theo chế độ trực tiếp. Voice Design luôn chạy bằng VoxCPM2."""
-    eng = get_engine("voxcpm") if mode == "design" else get_engine()
-    return eng.tts(
-        text,
-        desc=desc if mode == "design" else "",
-        ref_path=ref_path if mode == "clone" else "",
-        ref_text=ref_text,
-        preset=preset if mode == "preset" else "",
-        style=style,
-    )
-
-
-def synth_profile(profile_name: str, text: str, style: str = "") -> WavOut:
-    """Sinh âm bằng một giọng đã lưu trong kho (hoặc giọng mẫu)."""
-    bank = list_profiles(CFG["bank_dir"])
-    if profile_name not in bank:
-        return synth_text(text, "preset", "", "", "", profile_name, style)  # giọng mẫu
-    eng = get_engine()
-    prof = load_profile(CFG["bank_dir"], profile_name)
-    st = style or prof.style
-    if prof.kind == "design":
-        return eng.tts(text, desc=prof.desc, style=st)
-    if prof.kind == "clone":
-        return eng.tts(text, ref_path=prof.ref_audio, ref_text=prof.ref_text, style=st)
-    return eng.tts(text, preset=prof.name, style=st)
+def synth_text_note():
+    """Xem studio/synth.py — synth_text/synth_profile dùng chung app + kernel offload."""
 
 
 def compose_desc(gender, age, accent, pitch, pace, emotion, texture, extra) -> str:
@@ -248,6 +225,34 @@ _GUIDE_EN = """## 📖 How to use
 TR["vi"]["guide"] = _GUIDE_VI
 TR["en"]["guide"] = _GUIDE_EN
 
+# Offload lên Kaggle (batch) — chỉ dùng khi chạy local.
+TR["vi"].update({
+    "tab_kgl": "☁️ Chạy trên Kaggle (GPU free)",
+    "k_note": ("**Offload lên GPU Kaggle miễn phí** cho kịch bản/audiobook nặng hoặc máy không có GPU. "
+               "⚠️ Kaggle chạy **batch** (đẩy lên → chờ → tải về), **không phải** tương tác như Local."),
+    "k_slug": "Kernel slug (owner/tên)",
+    "k_accel": "GPU", "k_engine": "Engine",
+    "k_script": "Kịch bản (mỗi dòng: `Giọng: nội dung`)",
+    "k_setup": "Kiểm tra Kaggle CLI", "k_install": "Cài Kaggle CLI",
+    "k_push": "Đóng gói & đẩy lên GPU", "k_status": "Xem trạng thái",
+    "k_download": "Tải kết quả về", "k_out": "Nhật ký / trạng thái",
+})
+TR["en"].update({
+    "tab_kgl": "☁️ Run on Kaggle (free GPU)",
+    "k_note": ("**Offload to Kaggle's free GPU** for heavy scripts/audiobooks or machines without a GPU. "
+               "⚠️ Kaggle is **batch** (push → wait → download), **not** interactive like Local mode."),
+    "k_slug": "Kernel slug (owner/name)",
+    "k_accel": "GPU", "k_engine": "Engine",
+    "k_script": "Script (one line: `Voice: text`)",
+    "k_setup": "Check Kaggle CLI", "k_install": "Install Kaggle CLI",
+    "k_push": "Package & push to GPU", "k_status": "Check status",
+    "k_download": "Download results", "k_out": "Log / status",
+})
+
+
+def _on_kaggle() -> bool:
+    return os.path.isdir("/kaggle")
+
 
 # -------------------------------------------------------------------- UI ---
 def build_ui():
@@ -387,18 +392,7 @@ def build_ui():
                 return gr.update(choices=[n for n, _ in items])
 
             def do_script(script, gap, fmt):
-                lines: List[dict] = []
-                for raw in (script or "").splitlines():
-                    raw = raw.strip()
-                    if not raw or raw.startswith("//"):
-                        continue
-                    if ":" in raw:
-                        v, tx = raw.split(":", 1)
-                    elif "|" in raw:
-                        v, tx = raw.split("|", 1)
-                    else:
-                        v, tx = "", raw
-                    lines.append({"voice": v.strip(), "text": tx.strip(), "style": ""})
+                lines: List[dict] = render.parse_script(script)
                 if not lines:
                     raise gr.Error(t["err_script"])
 
@@ -417,6 +411,36 @@ def build_ui():
                 zp = os.path.join(CFG["work_dir"], "audio_outputs.zip")
                 ex.zip_outputs(CFG["out_dir"], zp)
                 return zp
+
+            def do_kgl_setup():
+                info = ko.check_setup()
+                cli = "✅" if info["cli"] else "❌"
+                auth = "✅" if info["auth"] else "❌"
+                lbl = "Đăng nhập" if vi else "Auth"
+                return f"Kaggle CLI: {cli} · {lbl}: {auth}\n{info['msg']}"
+
+            def do_kgl_install():
+                return ko.install_cli()
+
+            def do_kgl_push(slug, accel, engine, script):
+                ensure_dirs()
+                job = {"slug": slug or "voice-studio-offload", "engine": engine,
+                       "task": "script", "script": script or "", "gap": 0.25, "out_name": "audio"}
+                kdir = os.path.join(CFG["work_dir"], "kaggle_kernel")
+                ko.build_kernel(job, CFG["bank_dir"], kdir)
+                log = ("Đã đóng gói: " if vi else "Packaged: ") + kdir + "\n"
+                log += ko.push(kdir, accelerator=accel or "NvidiaTeslaT4")
+                log += ("\nĐã gửi lên Kaggle. Bấm 'Xem trạng thái' rồi 'Tải kết quả'."
+                        if vi else "\nSent to Kaggle. Use 'Check status' then 'Download results'.")
+                return log
+
+            def do_kgl_status(slug):
+                return ko.status(slug or "voice-studio-offload")
+
+            def do_kgl_download(slug):
+                dest = os.path.join(CFG["out_dir"], "kaggle_out")
+                out = ko.download(slug or "voice-studio-offload", dest)
+                return out + "\n" + ("Đã tải về: " if vi else "Downloaded to: ") + dest
 
             # ---- giao diện ----
             gr.HTML(f"<div class='vs-header'><p class='vs-title'>{t['app_title'].replace('## ','')}</p></div>")
@@ -511,6 +535,30 @@ def build_ui():
                 # 6 · Guide
                 with gr.Tab(t["tab_guide"]):
                     gr.Markdown(t["guide"])
+
+                # 7 · Kaggle offload (chỉ khi chạy local)
+                if not _on_kaggle():
+                    with gr.Tab(t["tab_kgl"]):
+                        gr.Markdown(t["k_note"])
+                        with gr.Row():
+                            k_slug = gr.Textbox(label=t["k_slug"], value="elainabaka/voice-studio-offload")
+                            k_accel = gr.Dropdown(["NvidiaTeslaT4", "NvidiaL4", "NvidiaTeslaP100"],
+                                                  value="NvidiaTeslaT4", label=t["k_accel"])
+                            k_engine = gr.Dropdown(["vieneu", "voxcpm"], value=CFG["engine"], label=t["k_engine"])
+                        k_script = gr.Textbox(label=t["k_script"], lines=8, value=t["s_example"])
+                        with gr.Row():
+                            k_setup = gr.Button(t["k_setup"])
+                            k_install = gr.Button(t["k_install"])
+                            k_push = gr.Button(t["k_push"], variant="primary")
+                        with gr.Row():
+                            k_status = gr.Button(t["k_status"])
+                            k_download = gr.Button(t["k_download"])
+                        k_log = gr.Textbox(label=t["k_out"], lines=8)
+                        k_setup.click(do_kgl_setup, [], [k_log])
+                        k_install.click(do_kgl_install, [], [k_log])
+                        k_push.click(do_kgl_push, [k_slug, k_accel, k_engine, k_script], [k_log])
+                        k_status.click(do_kgl_status, [k_slug], [k_log])
+                        k_download.click(do_kgl_download, [k_slug], [k_log])
 
             gr.Markdown(t["footer"])
 

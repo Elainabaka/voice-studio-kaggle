@@ -1,0 +1,9 @@
+# Voice Studio AI - local dependencies.
+# First run (run.py) installs these; pulls torch (large, one-time).
+gradio>=4.44
+soundfile
+librosa
+numpy
+torch
+vieneu
+# voxcpm

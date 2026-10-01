@@ -19,6 +19,23 @@ from .config import CFG
 SynthFn = Callable[[str, str, str], tuple]
 
 
+def parse_script(text: str) -> List[dict]:
+    """Phân tích kịch bản: mỗi dòng 'Giọng: nội dung' (hoặc 'Giọng | nội dung')."""
+    lines: List[dict] = []
+    for raw in (text or "").splitlines():
+        raw = raw.strip()
+        if not raw or raw.startswith("//"):
+            continue
+        if ":" in raw:
+            v, tx = raw.split(":", 1)
+        elif "|" in raw:
+            v, tx = raw.split("|", 1)
+        else:
+            v, tx = "", raw
+        lines.append({"voice": v.strip(), "text": tx.strip(), "style": ""})
+    return lines
+
+
 def render_lines(synth: SynthFn, lines: List[dict], gap_seconds: float = 0.25) -> tuple:
     """Sinh tung dong va noi lai -> (wav, sr). lines = [{voice, text, style}]."""
     wavs: List[np.ndarray] = []

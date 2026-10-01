@@ -21,7 +21,8 @@ OUT = os.path.join(ROOT, "notebook", "Voice_Studio_AI_Kaggle_GPU.ipynb")
 
 PKG_FILES = [
     "__init__.py", "config.py", "audio.py", "voicebank.py",
-    "render.py", "export.py", "engines.py", "app.py",
+    "render.py", "export.py", "engines.py", "synth.py", "app.py",
+    "kaggle_offload.py",
 ]
 
 
@@ -122,6 +123,7 @@ for _rel, _b64 in _FILES.items():
     with open(_path, "wb") as f:
         f.write(base64.b64decode(_b64))
 sys.path.insert(0, PKG)
+os.environ["VOICE_STUDIO_WORK"] = "/kaggle/working/voice_studio"
 
 from studio import CFG, ensure_dirs
 from studio.engines import available_engines, get_engine

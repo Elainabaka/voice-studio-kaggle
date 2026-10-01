@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import os
 
-# --- Duong dan tren Kaggle -------------------------------------------------
-WORK = os.environ.get("VOICE_STUDIO_WORK", "/kaggle/working/voice_studio")
+# --- Duong dan lam viec ----------------------------------------------------
+# Mac dinh (local): ~/.voice_studio. Tren Kaggle, dat env VOICE_STUDIO_WORK
+# = /kaggle/working/voice_studio TRUOC khi import studio.
+WORK = os.environ.get("VOICE_STUDIO_WORK", os.path.expanduser("~/.voice_studio"))
 
 CFG: dict = {
     # Engine dang su dung: "vieneu" | "voxcpm" | "chatterbox" | ...
     "engine": "vieneu",
-    # "cuda" | "cpu". Tren Kaggle chon Accelerator = GPU T4 x2.
-    "device": "cuda",
+    # "cuda" | "cpu". Entry local tu do GPU; doi bang env VOICE_STUDIO_DEVICE.
+    "device": os.environ.get("VOICE_STUDIO_DEVICE", "cuda"),
     # Thu muc goc chua moi san pham.
     "work_dir": WORK,
     # Kho giong (voice bank) - TRU COT: vuot qua session Kaggle.
