@@ -15,25 +15,26 @@ nhiều giọng, xuất WAV/MP3. Cộng đồng bấm **Copy & Edit → Run All*
 1. Tải `notebook/Voice_Studio_AI_Kaggle_GPU.ipynb` → vào Kaggle → **New Notebook → Import**.
 2. Bật **Settings → Accelerator = GPU (T4 x2)** và **Internet = ON** (bắt buộc để tải model).
 3. Bấm **Run All** → chờ cài thư viện + tải model (lần đầu vài phút).
-4. Ở cell cuối, bấm vào link **`https://xxxx.gradio.live`** → giao diện Studio mở ra.
+4. Giao diện **tự mở** ngay trong cell cuối (nhúng sẵn, không cần bấm link). Đổi ngôn ngữ **🇻🇳/🇺🇸** ở góc trên.
 
-### B. Dùng 5 tab trong Studio
+### B. Dùng các workspace trong Studio
 | Tab | Làm gì |
 |---|---|
-| **1 · Design** | Gõ *mô tả* giọng (giới tính, tuổi, vùng miền, tông) + nội dung → ra giọng **mới hoàn toàn**. Đặt tên → lưu vào Bank. |
-| **2 · Clone** | Tải clip 5–15 giây (sạch, không nhạc) + nội dung → nhân bản giọng. Có thể thêm *style* (chậm, thì thầm…). |
-| **3 · Bank** | Xem / đọc thử / xóa giọng đã lưu. **Export `.zip`** để giữ giọng, **Import** lại khi mở session mới. |
-| **4 · Script** | Dán kịch bản (mỗi dòng `Tên giọng: câu nói`) → xuất podcast/audiobook nhiều giọng. |
-| **5 · Export** | Tải WAV/MP3, hoặc nén toàn bộ ra `.zip`. |
+| 🎨 **Thiết kế giọng** | Chọn **giới tính / tuổi / vùng miền / chất giọng / cao độ / nhịp / cảm xúc** → tạo giọng **mới hoàn toàn** (chạy bằng VoxCPM2). |
+| 🎙️ **Nhân bản giọng** | Tải clip 5–15 giây + nội dung → nhân bản giọng, chỉnh phong cách. |
+| 🖼️ **Thư viện giọng** | Nghe thử giọng mẫu + giọng của bạn, lọc theo loại. **Xuất/Nhập `.zip`** để giữ giọng. |
+| 🎧 **Kịch bản** | Dán kịch bản (mỗi dòng `Tên giọng: câu nói`) → xuất podcast/audiobook nhiều giọng. |
+| 📦 **Xuất file** | Tải WAV/MP3, hoặc nén toàn bộ ra `.zip`. |
+| 📖 **Hướng dẫn** | Bảng hướng dẫn chi tiết ngay trong giao diện. |
 
 ### C. Giữ giọng qua session (quan trọng)
 Kaggle **xóa file khi hết phiên**. Muốn giữ giọng:
-1. Tab **3 · Bank** → **Export kho giong → `.zip`** → tải về máy.
-2. Lần chạy sau (Run All) → tab **3 · Bank** → **Import `.zip` vào kho**.
+1. Tab 🖼️ **Thư viện giọng** → **Xuất kho giọng → `.zip`** → tải về máy.
+2. Lần chạy sau (Run All) → tab 🖼️ **Thư viện giọng** → **Nhập `.zip` vào kho**.
 
 ### D. Mẹo chất lượng
 - **Clone:** clip 5–15s, sát mic, phòng yên, **không nhạc**, một người, đọc đúng tông bạn muốn.
-- **Design:** mô tả càng cụ thể càng tốt (tuổi + giới tính + vùng miền + tông + cảm xúc).
+- **Design:** mô tả càng cụ thể càng tốt (thanh thuộc tính giúp bạn ghép mô tả chuẩn).
 - **Giọng Việt chuẩn** → dùng engine `vieneu`. **Design + 30 ngôn ngữ** → dùng `voxcpm`.
 - Đổi engine ở cell cấu hình: `ENGINE = "vieneu"` hoặc `"voxcpm"`.
 
@@ -42,18 +43,18 @@ Kaggle **xóa file khi hết phiên**. Muốn giữ giọng:
 ## 🗺️ Mind map
 
 ```
-Voice Studio AI (Kaggle GPU · T4 x2)
+Voice Studio AI (Kaggle GPU · T4 x2)  —  giao diện tự mở · đổi ngôn ngữ 🇻🇳/🇺🇸
 │
-├── 🎨 Design      mô tả bằng chữ → giọng MỚI chưa từng tồn tại (không cần clip)
-│                  └─ engine: VoxCPM2 · (roadmap: Qwen3-TTS-VD)
-├── 🎙️ Clone       clip 3–15s → nhân bản + điều khiển style/cảm xúc
-│                  └─ engine: VieNeu · VoxCPM2 (controllable/ultimate cloning)
-├── 🗂️ Bank        kho giọng: lưu / xem / xóa / EXPORT-IMPORT .zip  ← TRỤ CỘT
-│                  └─ studio/voicebank.py  (vuot qua session Kaggle tam thoi)
-├── 📚 Script      kịch bản nhiều giọng → podcast / audiobook / hội thoại
-│                  └─ studio/render.py  (engine-agnostic)
-└── 📥 Export      WAV/MP3 + nén zip
-                   └─ studio/export.py
+├── 🎨 Thiết kế giọng   chọn giới tính/tuổi/accent/cao độ/nhịp/cảm xúc/chất giọng → giọng MỚI
+│                       └─ engine: VoxCPM2 (Voice Design)
+├── 🎙️ Nhân bản giọng   clip 5–15s → nhân bản + điều khiển phong cách/cảm xúc
+│                       └─ engine: VieNeu · VoxCPM2 (controllable/ultimate cloning)
+├── 🖼️ Thư viện giọng    giọng mẫu + giọng của bạn · EXPORT-IMPORT .zip  ← TRỤ CỘT
+│                       └─ studio/voicebank.py  (vuot qua session Kaggle tam thoi)
+├── 🎧 Kịch bản          kịch bản nhiều giọng → podcast / audiobook
+│                       └─ studio/render.py  (engine-agnostic)
+└── 📦 Xuất file         WAV/MP3 + nén zip  ·  📖 Hướng dẫn (tab riêng)
+                        └─ studio/export.py
 ```
 
 ## 💡 Ít người nghĩ tới, nhưng thiếu là hỏng

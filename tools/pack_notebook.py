@@ -50,23 +50,24 @@ def build() -> dict:
     cells = [
         md("""# Voice Studio AI — Kaggle GPU
 
-**Tạo giọng nói bằng AI trên GPU miễn phí của Kaggle.** Không chỉ "gõ chữ → ra tiếng":
-đây là một **studio thu nhỏ** để *thiết kế* và *nhân bản* giọng nói, lưu thành kho giọng
-tái sử dụng, dựng podcast/audiobook nhiều giọng — rồi xuất file.
+**Tạo và sở hữu giọng nói bằng AI trên GPU miễn phí của Kaggle.** Không chỉ "gõ chữ → ra tiếng":
+đây là một **studio thu nhỏ** để *thiết kế* và *nhân bản* giọng nói, lưu kho giọng tái sử dụng,
+dựng podcast/audiobook nhiều giọng — rồi xuất file.
 
 | Tab | Làm được gì |
 |---|---|
-| **1 · Design** | Mô tả giọng bằng chữ → tạo một giọng **chưa từng tồn tại** (không cần clip) |
-| **2 · Clone** | Tải clip 3–15 giây → nhân bản giọng + điều khiển style |
-| **3 · Bank** | Kho giọng: xem / đổi / xóa, **export/import .zip để giữ giọng qua session** |
-| **4 · Script** | Kịch bản nhiều giọng → podcast / audiobook / hội thoại |
-| **5 · Export** | Tải WAV/MP3 + nén toàn bộ ra .zip |
+| 🎨 **Thiết kế giọng** | Chọn giới tính / tuổi / vùng miền / chất giọng / cảm xúc → tạo giọng **chưa từng tồn tại** |
+| 🎙️ **Nhân bản giọng** | Tải clip 5–15 giây → nhân bản giọng + điều khiển phong cách |
+| 🖼️ **Thư viện giọng** | Giọng mẫu + giọng của bạn · **export/import .zip giữ giọng qua session** |
+| 🎧 **Kịch bản** | Kịch bản nhiều giọng → podcast / audiobook |
+| 📦 **Xuất file** | Tải WAV/MP3 + nén zip |
+| 📖 **Hướng dẫn** | Bảng hướng dẫn chi tiết |
 
 **Cách dùng:** chọn *Accelerator = GPU (T4 x2)*, *Internet = ON* → **Run All** →
-bấm vào link Gradio ở cell cuối.
+giao diện **tự mở** trong cell cuối. Đổi ngôn ngữ **🇻🇳 / 🇺🇸** ở góc trên giao diện.
 
 **Engine:** VieNeu v3-Turbo (tiếng Việt) hoặc VoxCPM2 (Design + Clone + Style, 30 ngôn ngữ).
-Đổi engine ở cell `CFG` bên dưới. Cả hai **Apache-2.0**.
+Đổi engine ở cell cấu hình. Cả hai **Apache-2.0**. *Voice Design chạy bằng VoxCPM2.*
 
 > **Author: Elainabaka** © 2026 — thiết kế & dựng notebook Voice Studio AI cho cộng đồng.
 > Code MIT · model giữ license Apache-2.0 của tác giả gốc. Xem mục Credit ở cuối notebook.
@@ -75,11 +76,11 @@ bấm vào link Gradio ở cell cuối.
 
         md("""## 🧭 Chỉ đường
 
-1. **Cấu hình & GPU** — đổi `ENGINE` nếu muốn.
+1. **Cấu hình & GPU** — đổi `ENGINE` nếu muốn (`vieneu` = tiếng Việt, `voxcpm` = Design + 30 ngôn ngữ).
 2. **Cài thư viện** — chỉ cài engine đang chọn (tránh xung đột dependency).
 3. **Nạp Voice Studio** — giải nén gói `studio/` ra đĩa rồi import.
 4. **Nạp model + test nhanh** — hot-swap, chỉ 1 model vào VRAM.
-5. **Gradio Studio** — giao diện 5 tab để dùng ngay.
+5. **Gradio Studio** — giao diện **tự mở** ngay trong cell này (đổi ngôn ngữ 🇻🇳/🇺🇸 ở góc trên).
 """),
 
         code("""# ===== 1 · CẤU HÌNH & KIỂM TRA GPU =====
@@ -147,19 +148,45 @@ except Exception as e:
     print("⚠️ Test lỗi (có thể do model chưa tải xong):", e)
 """),
 
-        code("""# ===== 5 · GRADIO STUDIO (5 tab) =====
+        code("""# ===== 5 · GRADIO STUDIO — TỰ MỞ giao diện ngay trong cell =====
 from studio.app import build_ui
+from IPython.display import HTML, display
+import time
+
 demo = build_ui()
-demo.launch(share=True, debug=False, height=760)
-# Bấm vào đường link `*.gradio.live` hiện ra để mở giao diện.
+demo.launch(share=True, prevent_thread_lock=True, quiet=True, show_error=False)
+time.sleep(0.5)
+url = demo.share_url or demo.server_url
+print("🎙️ Voice Studio AI đang chạy:", url)
+
+# Tự hiện giao diện bên dưới (iframe) + tự mở tab mới + link dự phòng.
+display(HTML(f'''
+<div style="font-family:system-ui,sans-serif; border:2px solid #6366f1; border-radius:12px; overflow:hidden; background:#eef2ff">
+  <div style="background:#312e81; color:#fff; padding:10px 14px; font-weight:700">
+    🎙️ Voice Studio AI — giao diện đã sẵn sàng (tự hiện bên dưới)
+  </div>
+  <iframe src="{url}?embed=true" style="width:100%; height:760px; border:0; display:block; background:#fff"></iframe>
+  <div style="padding:8px 14px">
+    <a href="{url}" target="_blank" style="color:#4f46e5; font-weight:700">↗️ Mở trong tab mới</a>
+    <span style="color:#64748b; font-size:13px"> · đổi ngôn ngữ 🇻🇳/🇺🇸 ở góc trên giao diện</span>
+  </div>
+</div>
+<script>try{{window.open("{url}","_blank")}}catch(e){{}}</script>
+'''))
+"""),
+
+        code("""# (Tuỳ chọn) Dùng API Python trực tiếp — không qua giao diện:
+# eng = get_engine()
+# wav, sr = eng.tts("Xin chào", preset="Minh Quân")           # giọng mẫu
+# audio.save_wav("/kaggle/working/voice_studio/output/demo.wav", wav, sr)
 """),
 
         md("""## 📥 Giữ kho giọng qua session (Voice Bank)
 
 Session Kaggle **tạm thời** — hết phiên là mất file. Muốn giữ giọng đã thiết kế/clone:
 
-1. Tab **3 · Bank** → bấm **Export kho giong → .zip** → tải `voice_bank.zip` về máy.
-2. Lần chạy sau (session mới, Run All) → tab **3 · Bank** → **Import .zip vào kho**.
+1. Tab 🖼️ **Thư viện giọng** → bấm **Xuất kho giọng → .zip** → tải `voice_bank.zip` về máy.
+2. Lần chạy sau (session mới, Run All) → tab 🖼️ **Thư viện giọng** → **Nhập .zip vào kho**.
 
 Đây là điểm khác biệt lớn nhất so với các notebook TTS thông thường: giọng nói của bạn
 trở thành **tài sản tái sử dụng**, không mất theo phiên.
