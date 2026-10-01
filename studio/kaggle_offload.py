@@ -31,7 +31,8 @@ def _kaggle(*args: str, timeout: int = 600) -> str:
     if not exe:
         raise RuntimeError("Chưa cài Kaggle CLI. Chạy `pip install kaggle` hoặc bấm nút 'Cài Kaggle CLI'.")
     try:
-        r = subprocess.run([exe, *args], capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run([exe, *args], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=timeout)
     except FileNotFoundError:
         raise RuntimeError("Không tìm thấy lệnh `kaggle`. Hãy cài: pip install kaggle")
     if r.returncode != 0:
@@ -133,7 +134,7 @@ print("Đã cài. Engine:", JOB.get("engine"))
 """),
         _code(f"""# 2 · unpack studio + kho giọng
 import base64, os, sys, json, tempfile
-PKG = "/kaggle/working/voice_studio_pkg"
+PKG = "/tmp/vs_pkg"
 os.makedirs(PKG, exist_ok=True)
 _FILES = json.loads(r'''{files_json}''')
 for _rel, _b64 in _FILES.items():
@@ -205,16 +206,18 @@ def build_kernel(job: dict, bank_dir: Optional[str], out_dir: str) -> str:
     nb = _kernel_notebook(files, job_b64)
     with open(os.path.join(out_dir, "voice_studio_offload.ipynb"), "w", encoding="utf-8") as f:
         json.dump(nb, f, ensure_ascii=False, indent=1)
+    slug = job.get("slug", "voice-studio-offload")
+    slug_part = slug.split("/")[-1] if "/" in slug else slug
     meta = {
-        "id": job.get("slug", "voice-studio-offload"),
-        "title": "Voice Studio Offload",
+        "id": slug,
+        # Kaggle lay kernel slug tu TITLE — title phai resolve ra id slug.
+        "title": slug_part,
         "code_file": "voice_studio_offload.ipynb",
         "language": "python",
         "kernel_type": "notebook",
         "is_private": True,
         "enable_gpu": True,
         "enable_internet": True,
-        "keywords": ["tts", "voice-studio", "offload"],
     }
     with open(os.path.join(out_dir, "kernel-metadata.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
